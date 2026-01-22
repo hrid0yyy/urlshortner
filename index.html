@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+        .result.error {
+            background: #ffe6e6;
+            color: #d32f2f;
+        }
+        .result.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .short-url {
+            font-size: 18px;
+            font-weight: 600;
+            word-break: break-all;
+            margin: 10px 0;
+            color: #667eea;
+        }
+        .copy-btn {
+            margin-top: 10px;
+            width: auto;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+        .info {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 URL Shortener</h1>
+        
+        <div class="input-group">
+            <label for="url">Enter your long URL:</label>
+            <input type="text" id="url" placeholder="https://example.com/very/long/url">
+        </div>
+        
+        <button onclick="shortenURL()">Shorten URL</button>
+        
+        <div id="result" class="result"></div>
+        
+        <div class="info">
+            ⏰ URLs expire after 24 hours
+        </div>
+    </div>
+
+    <script>
+        async function shortenURL() {
+            const urlInput = document.getElementById('url');
+            const url = urlInput.value.trim();
+            const resultDiv = document.getElementById('result');
+            
+            if (!url) {
+                showResult('Please enter a URL', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const shortURL = window.location.origin + '/' + data.short_code;
+                    showResult(
+                        '<strong>Success! 🎉</strong><br>' +
+                        '<div class="short-url">' + shortURL + '</div>' +
+                        '<button class="copy-btn" onclick="copyToClipboard(\'' + shortURL + '\')">📋 Copy to Clipboard</button>',
+                        'success'
+                    );
+                } else {
+                    showResult('Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showResult('Network error: ' + error.message, 'error');
+            }
+        }
+        
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = 'result show ' + type;
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ Copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+        
+        document.getElementById('url').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                shortenURL();
+            }
+        });
+    </script>
+</body>
+</html>
